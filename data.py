@@ -55,6 +55,11 @@ def cloud_score(s2n):
     return _DETECTOR.get_cloud_probability_maps(s2n.transpose(1, 2, 0)[None])[0].astype(np.float32)
 
 
+def nodata_mask(x):
+    """1 where every band is 0 (no acquisition / outside swath)."""
+    return (x == 0).all(0).astype(np.float32)
+
+
 def cloud_cache_path(p):
     return p[:-4] + "_cld.npy"
 
@@ -84,7 +89,10 @@ class CRTS(Dataset):
             return self._plan[k]
         ts = sorted(set(self.idx[k]["s2"]) & set(self.idx[k]["s1"]))
         cov = {t: float(cached_cloud(self.idx[k]["s2"][t][0]).mean()) for t in ts}
-        tgt = min(ts, key=cov.get)
+        # blank / partially missing S2 acquisitions score cloud=0 but are never valid targets
+        nodata = {t: float(nodata_mask(read(self.idx[k]["s2"][t][0])).mean()) for t in ts}
+        valid = [t for t in ts if nodata[t] == 0] or ts
+        tgt = min(valid, key=cov.get)
         rest = sorted([t for t in ts if t != tgt], key=lambda t: abs(t - tgt))[: self.T]
         self._plan[k] = (sorted(rest), tgt, cov)
         return self._plan[k]
@@ -95,9 +103,12 @@ class CRTS(Dataset):
     def __getitem__(self, i):
         k = self.keys[i]
         ins, tgt, cov = self.plan(k)
-        s2 = np.stack([norm_s2(read(self.idx[k]["s2"][t][0])) for t in ins])
+        raw = [read(self.idx[k]["s2"][t][0]) for t in ins]
+        s2 = np.stack([norm_s2(r) for r in raw])
         s1 = np.stack([norm_s1(read(self.idx[k]["s1"][t][0])) for t in ins])
-        cm = np.stack([cached_cloud(self.idx[k]["s2"][t][0]) for t in ins])[:, None]
+        # missing pixels carry no information: treat them as fully clouded
+        cm = np.stack([np.maximum(cached_cloud(self.idx[k]["s2"][t][0]), nodata_mask(r))
+                       for t, r in zip(ins, raw)])[:, None]
         y = norm_s2(read(self.idx[k]["s2"][tgt][0]))
         # relative acquisition time in months (real dates; revisits are irregular)
         d = lambda t: np.datetime64(self.idx[k]["s2"][t][1])

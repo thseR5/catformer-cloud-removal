@@ -37,6 +37,21 @@ python train.py --root data/asiaWest --model catformer --epochs 40 --stage2_epoc
 python train.py --root data/asiaWest --model uncrtaints --epochs 40 --lr 1e-3
 ```
 
-## Status
+## Results (preliminary)
 
-Preliminary results exist only on a single tile, with validation patches taken from the training tile, so they are not reported here. Held-out-tile results are pending.
+Region asiaWest of SEN12MS-CR-TS (7 tiles, 1,920 locations). The split is by whole tile: 5 train / 1 val / 1 test.
+Inputs are 3 S2 + S1 dates, and the target is the clearest valid date. The table shows test tile `ROIs1970/112` (270 locations), scored once with the checkpoint chosen on val. Seed 0 only.
+
+| Method | Params | PSNR ↑ | SSIM (RGB) ↑ | MAE ↓ | SAM ↓ |
+|---|---|---|---|---|---|
+| Mean of inputs | – | 23.29 | 0.721 | 0.0767 | 11.82° |
+| Least-cloudy input | – | 30.80 | 0.840 | 0.0330 | **7.90°** |
+| UnCRtainTS (retrained here) | 0.57M | 32.53 | 0.920 | 0.0218 | 9.75° |
+| CATFormer, Stage 1 | 5.5M | 32.49 | 0.933 | 0.0210 | 9.72° |
+| **CATFormer + refiner** | 8.8M | **32.72** | **0.936** | **0.0196** | 9.09° |
+
+Caveats:
+- Single seed and a single test tile, so the gaps between the learned models may be within noise. Runs for seeds 1–2 are in progress.
+- Every learned model is worse than the least-cloudy baseline on SAM (spectral fidelity).
+- The val tile is nearly cloud-free, so it is a weak signal for choosing checkpoints.
+- These numbers are not directly comparable to published results, which use other regions and splits.

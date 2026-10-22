@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+data/
+raw/
+runs/
+logs/
+eda/
+uncrtaints_repo/
+*.pt
+*_cld.npy

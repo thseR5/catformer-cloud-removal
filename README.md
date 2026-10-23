@@ -40,18 +40,20 @@ python train.py --root data/asiaWest --model uncrtaints --epochs 40 --lr 1e-3
 ## Results (preliminary)
 
 Region asiaWest of SEN12MS-CR-TS (7 tiles, 1,920 locations). The split is by whole tile: 5 train / 1 val / 1 test.
-Inputs are 3 S2 + S1 dates, and the target is the clearest valid date. The table shows test tile `ROIs1970/112` (270 locations), scored once with the checkpoint chosen on val. Seed 0 only.
+Inputs are 3 S2 + S1 dates, and the target is the clearest valid date. The table shows test tile `ROIs1970/112` (270 locations), scored once with the checkpoint chosen on val. Values are mean ± std over 3 seeds.
 
 | Method | Params | PSNR ↑ | SSIM (RGB) ↑ | MAE ↓ | SAM ↓ |
 |---|---|---|---|---|---|
-| Mean of inputs | – | 23.29 | 0.721 | 0.0767 | 11.82° |
 | Least-cloudy input | – | 30.80 | 0.840 | 0.0330 | **7.90°** |
-| UnCRtainTS (retrained here) | 0.57M | 32.53 | 0.920 | 0.0218 | 9.75° |
-| CATFormer, Stage 1 | 5.5M | 32.49 | 0.933 | 0.0210 | 9.72° |
-| **CATFormer + refiner** | 8.8M | **32.72** | **0.936** | **0.0196** | 9.09° |
+| UnCRtainTS (retrained here) | 0.57M | 32.69 ± 0.27 | 0.920 ± 0.004 | 0.0209 ± 0.0011 | 9.75 ± 0.47° |
+| CATFormer, Stage 1 | 5.5M | 33.10 ± 0.67 | **0.933 ± 0.003** | 0.0200 ± 0.0010 | 9.66 ± 0.35° |
+| CATFormer + refiner | 8.8M | **33.12 ± 0.60** | 0.933 ± 0.003 | **0.0195 ± 0.0004** | 9.39 ± 0.33° |
 
-Caveats:
-- Single seed and a single test tile, so the gaps between the learned models may be within noise. Runs for seeds 1–2 are in progress.
+Findings:
+- SSIM: every CATFormer seed beats every UnCRtainTS seed (+0.012 on average).
+- PSNR is +0.42 dB on average, but that is within the seed spread, so it is not a reliable gain yet.
+- The refiner adds almost nothing over Stage 1. Its best val epoch was 1–13 of 20, because the val tile is nearly cloud-free and is a weak signal for choosing checkpoints.
 - Every learned model is worse than the least-cloudy baseline on SAM (spectral fidelity).
-- The val tile is nearly cloud-free, so it is a weak signal for choosing checkpoints.
-- These numbers are not directly comparable to published results, which use other regions and splits.
+- These numbers come from one test tile and are not directly comparable to published results, which use other regions and splits.
+
+`viz.py` generates a qualitative figure (best and worst test locations, all methods, uncertainty map).

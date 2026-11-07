@@ -25,7 +25,14 @@ Multi-temporal SAR-optical cloud removal for Sentinel-2, trained on
 | `train.py` | whole-tile train/val/test split, baselines, both stages, single final test scoring |
 | `cache_clouds.py` | precompute cloud maps |
 | `eda.py` | exploratory data analysis figures |
+| `expansion/full_eda.py` | full-region cloud and paired S1/S2 EDA |
+| `expansion/cross_region.py` | AsiaWest→AsiaEast transfer, fine-tuning, and self-supervised adaptation |
+| `export_pngs.py`, `make_sheets.py` | export test predictions and build contact sheets |
 | `*.sbatch` | Slurm job scripts used on the cluster |
+
+## Project report
+
+The updated project report is available in [`reports/Cloud_Removal_Project_Report_Updated.pdf`](reports/Cloud_Removal_Project_Report_Updated.pdf) (24 pages) and as an editable [`DOCX`](reports/Cloud_Removal_Project_Report_Updated.docx).
 
 ## Usage
 
